@@ -47,6 +47,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDele
         //Set up location manager with defaults
         loc.desiredAccuracy = kCLLocationAccuracyBest
         loc.distanceFilter = kCLDistanceFilterNone
+       
         loc.delegate = self
         
         //Optimisation of battery
@@ -77,6 +78,8 @@ class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDele
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+         //set to Satellite view
+        self.mapView.mapType = MKMapType.Satellite
         self.updateStateWithInput(.Start)
         
     }
