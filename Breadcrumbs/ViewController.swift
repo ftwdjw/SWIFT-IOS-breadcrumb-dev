@@ -11,6 +11,10 @@ import MapKit
 import CoreLocation
 
 class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDelegate, BCOptionsSheetDelegate {
+    
+    //variables
+     var measurement=0
+    
     /// The application state - "where we are in a known sequence"
     enum AppState {
         case WaitingForViewDidLoad
@@ -54,6 +58,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDele
         loc.pausesLocationUpdatesAutomatically = true
         loc.activityType = CLActivityType.Fitness
         loc.allowsBackgroundLocationUpdates = false
+        print("location manager called\n")
         
         return loc
     }()
@@ -80,6 +85,10 @@ class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDele
         // Do any additional setup after loading the view, typically from a nib.
          //set to Satellite view
         self.mapView.mapType = MKMapType.Satellite
+        // enable zoom
+        self.mapView.zoomEnabled = true
+        //start
+        //end
         self.updateStateWithInput(.Start)
         
     }
@@ -102,6 +111,33 @@ class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDele
     
     func locationManager(manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let _ = locations.last else {return}
+        //START
+       
+        print("measurement=\(measurement) \(locations.last!)\n")
+        measurement += 1
+        
+        let location = locations.last
+        print("update last location")
+         print("measurement=\(measurement) latitude=\(location!.coordinate.latitude)\n")
+         print("measurement=\(measurement) longitude=\(location!.coordinate.longitude)\n")
+        let center = CLLocationCoordinate2D(latitude: location!.coordinate.latitude, longitude: location!.coordinate.longitude)
+        let region = MKCoordinateRegionMakeWithDistance(center, 50, 50)
+        self.mapView.delegate = self
+        self.mapView.setRegion(region, animated: true)
+        self.mapView.regionThatFits(region)
+        self.mapView.showsUserLocation = true
+        print("location zoomed\n")
+        //self.locationManager.stopUpdatingLocation()
+    
+    
+        
+        //CLLocationCoordinate2D = noLocation
+        //MKCoordinateRegion viewRegion = MKCoordinateRegionMakeWithDistance(noLocation, 500, 500);
+        //MKCoordinateRegion adjustedRegion = [self.mapView regionThatFits:viewRegion];
+        //[self.mapView setRegion:adjustedRegion animated:YES];
+        //self.mapView.showsUserLocation = YES;
+        //end
+        
         
         globalModel.addRecords(locations) {
             self.updateMapOverlay()
@@ -130,6 +166,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDele
     
     func mapView(mapView: MKMapView, didChangeUserTrackingMode mode: MKUserTrackingMode, animated: Bool) {
         mapView.userTrackingMode = self.options.userTrackingMode
+        print("tracking mode changed\n")
     }
     
     // MARK: Action and Events
@@ -215,10 +252,13 @@ class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDele
         
         switch (self.state) {
         case .WaitingForViewDidLoad:
+            print("waiting for view did load\n")
             break
             
         case .RequestingAuth:
             locationManager.requestAlwaysAuthorization()
+            
+             print("request always authorization\n")
             
             //Set UI into default state until authorised
             
@@ -238,6 +278,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDele
             
         case .LiveMapNoLogging:
             
+            print("live map no logging\n")
             //Buttons for logging
             startButton.enabled = true
             stopButton.enabled = false
@@ -248,19 +289,32 @@ class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDele
             
             //Live Map
             mapView.showsUserLocation = true
-            mapView.userTrackingMode = self.options.userTrackingMode
+            mapView.userTrackingMode = .None
             mapView.showsTraffic = self.options.showTraffic
+            self.locationManager.stopUpdatingLocation()
+
             mapView.delegate = self
+            
+            print("update map overlay\n")
+
             self.updateMapOverlay()
             
             //Location Manager
             locationManager.desiredAccuracy = self.options.gpsPrecision
             locationManager.distanceFilter  = self.options.distanceBetweenMeasurements
             locationManager.allowsBackgroundLocationUpdates = self.options.backgroundUpdates
-            locationManager.stopUpdatingLocation()
-            locationManager.stopUpdatingHeading()
+            //locationManager.stopUpdatingLocation()
+            //locationManager.stopUpdatingHeading()
+            locationManager.startUpdatingLocation()
+            if self.options.headingAvailable {
+                locationManager.startUpdatingHeading()
+            }
+
             
         case .LiveMapLogging:
+            
+            print("live map with logging\n")
+
             //Buttons
             startButton.enabled   = false
             stopButton.enabled    = true
@@ -296,5 +350,12 @@ class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDele
         }
     }
     
-}
+    func locationManager(manager: CLLocationManager, didFailWithError error:
+        NSError)
+    {
+        print("Error: " + error.localizedDescription)
+    }
+
+    
+}//end VC
 
